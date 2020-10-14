@@ -1,0 +1,12 @@
+bannedtext:
+  - "http"
+  - "https"
+  - "://"
+  - ".org"
+  - ".com"
+  - ".net"
+  - ".org"
+  - ".co"
+  - ".cc"
+  - ".tk"
+  - ".ga"
