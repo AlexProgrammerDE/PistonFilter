@@ -1,6 +1,5 @@
 package me.alexprogrammerde.pistonantispam;
 
-import com.sun.tools.javac.util.StringUtils;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.ChatEvent;
@@ -18,11 +17,11 @@ public class ChatListener implements Listener {
     public void onChat(ChatEvent event) {
         if (event.getSender() instanceof ProxiedPlayer) {
             for (String str : plugin.config.getStringList("bannedtext")) {
-                if (event.getMessage().toLowerCase().contains(str.toLowerCase())) {
+                if (event.getMessage().toLowerCase().replaceAll(" ", "").contains(str.toLowerCase())) {
                     event.setCancelled(true);
                     ProxiedPlayer sender = (ProxiedPlayer) event.getSender();
 
-                    sender.sendMessage(new ComponentBuilder(event.getMessage()).create());
+                    sender.sendMessage(new ComponentBuilder("<" + sender.getDisplayName() + "> " + event.getMessage()).create());
 
                     plugin.getLogger().info("Prevented " + sender.getName() + " from saying: " + event.getMessage());
 
