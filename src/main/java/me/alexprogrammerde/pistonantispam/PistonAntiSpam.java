@@ -1,5 +1,6 @@
 package me.alexprogrammerde.pistonantispam;
 
+import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.config.Configuration;
 import net.md_5.bungee.config.ConfigurationProvider;
@@ -15,7 +16,7 @@ public class PistonAntiSpam extends Plugin {
 
     @Override
     public void onEnable() {
-        getLogger().info("Loading config");
+        getLogger().info(ChatColor.AQUA + "Loading config");
         if (!getDataFolder().exists())
             getDataFolder().mkdir();
 
@@ -35,16 +36,13 @@ public class PistonAntiSpam extends Plugin {
             e.printStackTrace();
         }
 
-        getLogger().info("Registering listener");
+        getLogger().info(ChatColor.AQUA + "Registering listener");
         getProxy().getPluginManager().registerListener(this, new ChatListener(this));
 
-        getLogger().info("Registering command");
+        getLogger().info(ChatColor.AQUA + "Registering command");
         getProxy().getPluginManager().registerCommand(this, new AntiSpamCommand(this));
-    }
 
-    @Override
-    public void onDisable() {
-
+        getLogger().info(ChatColor.AQUA + "Done! :D");
     }
 
     public void reloadConfig() {
