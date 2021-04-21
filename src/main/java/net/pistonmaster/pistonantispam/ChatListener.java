@@ -1,4 +1,4 @@
-package me.alexprogrammerde.pistonantispam;
+package net.pistonmaster.pistonantispam;
 
 import lombok.RequiredArgsConstructor;
 import net.md_5.bungee.api.ChatColor;
@@ -15,12 +15,19 @@ public class ChatListener implements Listener {
     @EventHandler
     public void onChat(ChatEvent event) {
         if (event.getSender() instanceof ProxiedPlayer) {
+            ProxiedPlayer sender = (ProxiedPlayer) event.getSender();
+
+            if (!sender.hasPermission("pistonantispam.bypass"))
+                return;
+
+            if (event.getMessage().startsWith("/"))
+                return;
+
             String cutMessage= event.getMessage().toLowerCase().replace(" ", "");
 
             for (String str : plugin.config.getStringList("bannedtext")) {
                 if (cutMessage.contains(str.toLowerCase())) {
                     event.setCancelled(true);
-                    ProxiedPlayer sender = (ProxiedPlayer) event.getSender();
 
                     sender.sendMessage(new ComponentBuilder("<" + sender.getDisplayName() + "> " + event.getMessage()).create());
 

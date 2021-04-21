@@ -1,4 +1,4 @@
-package me.alexprogrammerde.pistonantispam;
+package net.pistonmaster.pistonantispam;
 
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.plugin.Plugin;

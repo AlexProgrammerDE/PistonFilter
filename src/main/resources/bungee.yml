@@ -1,4 +1,4 @@
 name: PistonAntiSpam
 version: ${project.version}
-main: me.alexprogrammerde.pistonantispam.PistonAntiSpam
+main: net.pistonmaster.pistonantispam.PistonAntiSpam
 description: Shadow prevents people from posting unwanted text.
