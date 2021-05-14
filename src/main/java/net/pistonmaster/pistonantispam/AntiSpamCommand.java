@@ -29,7 +29,7 @@ public class AntiSpamCommand extends Command {
                     if (args.length > 1) {
                         Configuration config = plugin.config;
 
-                        config.set("bannedtext", plugin.config.getStringList("bannedtext").add(args[1]));
+                        config.set("banned-text", plugin.config.getStringList("banned-text").add(args[1]));
 
                         try {
                             ConfigurationProvider.getProvider(YamlConfiguration.class).save(config, new File(plugin.getDataFolder(), "config.yml"));

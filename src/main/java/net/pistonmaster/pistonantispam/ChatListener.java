@@ -20,18 +20,22 @@ public class ChatListener implements Listener {
             if (!sender.hasPermission("pistonantispam.bypass"))
                 return;
 
-            if (event.getMessage().startsWith("/"))
+            if (!plugin.config.getBoolean("ignore-slash") && event.getMessage().startsWith("/"))
                 return;
 
-            String cutMessage= event.getMessage().toLowerCase().replace(" ", "");
+            String cutMessage = event.getMessage().toLowerCase().replace(" ", "");
 
-            for (String str : plugin.config.getStringList("bannedtext")) {
+            for (String str : plugin.config.getStringList("banned-text")) {
                 if (cutMessage.contains(str.toLowerCase())) {
                     event.setCancelled(true);
 
-                    sender.sendMessage(new ComponentBuilder("<" + sender.getDisplayName() + "> " + event.getMessage()).create());
+                    if(plugin.config.getBoolean("message-sender") && !event.getMessage().startsWith("/")) {
+                        sender.sendMessage(new ComponentBuilder("<" + sender.getDisplayName() + "> " + event.getMessage()).create());
+                    }
 
-                    plugin.getLogger().info(ChatColor.RED + "Prevented " + sender.getName() + " from saying: " + event.getMessage());
+                    if(plugin.config.getBoolean("verbose")) {
+                        plugin.getLogger().info(ChatColor.RED + "Prevented " + sender.getName() + " from saying: " + event.getMessage());
+                    }
 
                     break;
                 }
