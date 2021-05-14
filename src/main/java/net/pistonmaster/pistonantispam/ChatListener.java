@@ -17,11 +17,9 @@ public class ChatListener implements Listener {
         if (event.getSender() instanceof ProxiedPlayer) {
             ProxiedPlayer sender = (ProxiedPlayer) event.getSender();
 
-            if (!sender.hasPermission("pistonantispam.bypass"))
-                return;
+            if (!sender.hasPermission("pistonantispam.bypass")) return;
 
-            if (!plugin.config.getBoolean("ignore-slash") && event.getMessage().startsWith("/"))
-                return;
+            if (event.getMessage().startsWith("/") && plugin.config.getBoolean("ignore-slash")) return;
 
             String cutMessage = event.getMessage().toLowerCase().replace(" ", "");
 

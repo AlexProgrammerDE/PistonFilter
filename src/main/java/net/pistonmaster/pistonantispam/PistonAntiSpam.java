@@ -17,8 +17,10 @@ public class PistonAntiSpam extends Plugin {
     @Override
     public void onEnable() {
         getLogger().info(ChatColor.AQUA + "Loading config");
+        if (!getDataFolder().exists())
+            getDataFolder().mkdir();
 
-        File file = checkDataFolder();
+        File file = new File(getDataFolder(), "config.yml");
 
         if (!file.exists()) {
             try (InputStream in = getResourceAsStream("config.yml")) {
@@ -44,7 +46,10 @@ public class PistonAntiSpam extends Plugin {
     }
 
     public void reloadConfig() {
-        File file = checkDataFolder();
+        if (!getDataFolder().exists())
+            getDataFolder().mkdir();
+
+        File file = new File(getDataFolder(), "config.yml");
 
         if (!file.exists()) {
             try (InputStream in = getResourceAsStream("config.yml")) {
@@ -61,10 +66,4 @@ public class PistonAntiSpam extends Plugin {
         }
     }
 
-    private File checkDataFolder(){
-        if (!getDataFolder().exists())
-            getDataFolder().mkdir();
-
-        return new File(getDataFolder(), "config.yml");
-    }
 }
