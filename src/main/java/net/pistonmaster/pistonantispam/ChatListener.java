@@ -16,12 +16,13 @@ public class ChatListener implements Listener {
     public void onChat(ChatEvent event) {
         if (event.getSender() instanceof ProxiedPlayer) {
             ProxiedPlayer sender = (ProxiedPlayer) event.getSender();
+            String message = event.getMessage();
 
-            if (!sender.hasPermission("pistonantispam.bypass")) return;
+            if (sender.hasPermission("pistonantispam.bypass")) return;
 
-            if (event.getMessage().startsWith("/") && plugin.config.getBoolean("ignore-slash")) return;
+            if (message.startsWith("/") && plugin.config.getBoolean("ignore-slash")) return;
 
-            String cutMessage = event.getMessage().toLowerCase().replace(" ", "");
+            String cutMessage = message.toLowerCase().replace(" ", "");
 
             for (String str : plugin.config.getStringList("banned-text")) {
                 if (cutMessage.contains(str.toLowerCase())) {
@@ -32,7 +33,8 @@ public class ChatListener implements Listener {
                     }
 
                     if(plugin.config.getBoolean("verbose")) {
-                        plugin.getLogger().info(ChatColor.RED + "Prevented " + sender.getName() + " from saying: " + event.getMessage());
+                        String string = (message.startsWith("/")) ? " " : " <" + sender.getName() + "> ";
+                        plugin.getLogger().info(ChatColor.RED + "[AntiSpam]" + string + event.getMessage());
                     }
 
                     break;
