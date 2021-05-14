@@ -1,4 +1,7 @@
-bannedtext:
+verbose: true
+ignore-slash: false
+message-sender: true
+banned-text:
   - "http"
   - "https"
   - "://"

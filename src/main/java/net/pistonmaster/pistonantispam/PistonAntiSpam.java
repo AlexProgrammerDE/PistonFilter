@@ -65,4 +65,5 @@ public class PistonAntiSpam extends Plugin {
             e.printStackTrace();
         }
     }
+
 }
