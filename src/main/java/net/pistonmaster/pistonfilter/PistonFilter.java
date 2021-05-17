@@ -1,4 +1,4 @@
-package net.pistonmaster.pistonantispam;
+package net.pistonmaster.pistonfilter;
 
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.plugin.Plugin;
@@ -11,41 +11,24 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 
-public class PistonAntiSpam extends Plugin {
+public class PistonFilter extends Plugin {
     Configuration config;
 
     @Override
     public void onEnable() {
         getLogger().info(ChatColor.AQUA + "Loading config");
-        if (!getDataFolder().exists())
-            getDataFolder().mkdir();
-
-        File file = new File(getDataFolder(), "config.yml");
-
-        if (!file.exists()) {
-            try (InputStream in = getResourceAsStream("config.yml")) {
-                Files.copy(in, file.toPath());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        try {
-            config = ConfigurationProvider.getProvider(YamlConfiguration.class).load(new File(getDataFolder(), "config.yml"));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        loadConfig();
 
         getLogger().info(ChatColor.AQUA + "Registering listener");
         getProxy().getPluginManager().registerListener(this, new ChatListener(this));
 
         getLogger().info(ChatColor.AQUA + "Registering command");
-        getProxy().getPluginManager().registerCommand(this, new AntiSpamCommand(this));
+        getProxy().getPluginManager().registerCommand(this, new FilterCommand(this));
 
         getLogger().info(ChatColor.AQUA + "Done! :D");
     }
 
-    public void reloadConfig() {
+    public void loadConfig() {
         if (!getDataFolder().exists())
             getDataFolder().mkdir();
 
@@ -65,5 +48,4 @@ public class PistonAntiSpam extends Plugin {
             e.printStackTrace();
         }
     }
-
 }

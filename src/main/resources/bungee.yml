@@ -1,4 +1,4 @@
-name: PistonAntiSpam
+name: PistonFilter
 version: ${project.version}
-main: net.pistonmaster.pistonantispam.PistonAntiSpam
+main: net.pistonmaster.pistonfilter.PistonFilter
 description: Shadow prevents people from posting unwanted text.

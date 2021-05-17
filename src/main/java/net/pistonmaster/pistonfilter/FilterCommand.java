@@ -1,4 +1,4 @@
-package net.pistonmaster.pistonantispam;
+package net.pistonmaster.pistonfilter;
 
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.plugin.Command;
@@ -9,20 +9,20 @@ import net.md_5.bungee.config.YamlConfiguration;
 import java.io.File;
 import java.io.IOException;
 
-public class AntiSpamCommand extends Command {
-    private final PistonAntiSpam plugin;
+public class FilterCommand extends Command {
+    private final PistonFilter plugin;
 
-    public AntiSpamCommand(PistonAntiSpam plugin) {
-        super("pistonantispam", "pistonantispam.admin");
+    public FilterCommand(PistonFilter plugin) {
+        super("pistonfilter", "pistonfilter.admin");
         this.plugin = plugin;
     }
 
     @Override
     public void execute(CommandSender sender, String[] args) {
-        if (sender.hasPermission("pistonantispam.admin")) {
+        if (sender.hasPermission("pistonfilter.admin")) {
             if (args.length > 0) {
                 if (args[0].equalsIgnoreCase("reload")) {
-                    plugin.reloadConfig();
+                    plugin.loadConfig();
                 }
 
                 if (args[0].equalsIgnoreCase("add")) {
