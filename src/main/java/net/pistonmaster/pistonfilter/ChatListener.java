@@ -2,49 +2,17 @@ package net.pistonmaster.pistonfilter;
 
 import lombok.RequiredArgsConstructor;
 import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.chat.ComponentBuilder;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
-import net.md_5.bungee.api.event.ChatEvent;
-import net.md_5.bungee.api.plugin.Listener;
-import net.md_5.bungee.event.EventHandler;
+import net.pistonmaster.pistonchat.api.PistonChatEvent;
+import net.pistonmaster.pistonchat.api.PistonWhisperEvent;
+import net.pistonmaster.pistonchat.utils.CommonTool;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 
 import java.util.regex.Pattern;
 
 @RequiredArgsConstructor
 public class ChatListener implements Listener {
     private final PistonFilter plugin;
-
-    @EventHandler
-    public void onChat(ChatEvent event) {
-        if (event.getSender() instanceof ProxiedPlayer) {
-            ProxiedPlayer sender = (ProxiedPlayer) event.getSender();
-            String message = event.getMessage();
-
-            if (sender.hasPermission("pistonfilter.bypass")) return;
-
-            if (message.startsWith("/") && plugin.config.getBoolean("ignore-slash")) return;
-
-            String cutMessage = message.toLowerCase().replace(" ", "").replaceAll("\\s+", "");
-
-            for (String str : plugin.config.getStringList("banned-text")) {
-                if (Pattern.compile(toLeetPattern(str).toLowerCase()).matcher(cutMessage).find()) {
-                    event.setCancelled(true);
-
-                    if (plugin.config.getBoolean("message-sender") && !event.getMessage().startsWith("/")) {
-                        sender.sendMessage(new ComponentBuilder("<" + sender.getDisplayName() + "> " + event.getMessage()).create());
-                    }
-
-                    if (plugin.config.getBoolean("verbose")) {
-                        String string = (message.startsWith("/")) ? " " : " <" + sender.getName() + "> ";
-
-                        plugin.getLogger().info(ChatColor.RED + "[AntiSpam]" + string + event.getMessage());
-                    }
-
-                    break;
-                }
-            }
-        }
-    }
 
     public static String toLeetPattern(String str) {
         str = str.toUpperCase();
@@ -71,5 +39,55 @@ public class ChatListener implements Listener {
         }
 
         return result.toString();
+    }
+
+    @EventHandler
+    public void onChat(PistonChatEvent event) {
+        String message = event.getMessage();
+
+        if (event.getPlayer().hasPermission("pistonfilter.bypass")) return;
+
+        String cutMessage = message.toLowerCase().replace(" ", "").replaceAll("\\s+", "");
+
+        for (String str : plugin.config.getStringList("banned-text")) {
+            if (Pattern.compile(toLeetPattern(str).toLowerCase()).matcher(cutMessage).find()) {
+                event.setCancelled(true);
+
+                if (plugin.config.getBoolean("message-sender")) {
+                    CommonTool.sendChatMessage(event.getPlayer(), event.getMessage(), event.getPlayer());
+                }
+
+                if (plugin.config.getBoolean("verbose")) {
+                    plugin.getLogger().info(ChatColor.RED + "[AntiSpam] <" + event.getPlayer().getName() + "> " + event.getMessage());
+                }
+
+                break;
+            }
+        }
+    }
+
+    @EventHandler
+    public void onWhisper(PistonWhisperEvent event) {
+        String message = event.getMessage();
+
+        if (event.getSender().hasPermission("pistonfilter.bypass")) return;
+
+        String cutMessage = message.toLowerCase().replace(" ", "").replaceAll("\\s+", "");
+
+        for (String str : plugin.config.getStringList("banned-text")) {
+            if (Pattern.compile(toLeetPattern(str).toLowerCase()).matcher(cutMessage).find()) {
+                event.setCancelled(true);
+
+                if (plugin.config.getBoolean("message-sender")) {
+                    CommonTool.sendSender(event.getSender(), message, event.getReceiver());
+                }
+
+                if (plugin.config.getBoolean("verbose")) {
+                    plugin.getLogger().info(ChatColor.RED + "[AntiSpam] <" + event.getSender().getName() + "> " + event.getMessage());
+                }
+
+                break;
+            }
+        }
     }
 }

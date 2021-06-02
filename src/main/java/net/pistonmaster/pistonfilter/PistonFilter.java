@@ -1,18 +1,17 @@
 package net.pistonmaster.pistonfilter;
 
 import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.plugin.Plugin;
-import net.md_5.bungee.config.Configuration;
-import net.md_5.bungee.config.ConfigurationProvider;
-import net.md_5.bungee.config.YamlConfiguration;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 
-public class PistonFilter extends Plugin {
-    Configuration config;
+public class PistonFilter extends JavaPlugin {
+    FileConfiguration config;
 
     @Override
     public void onEnable() {
@@ -20,10 +19,10 @@ public class PistonFilter extends Plugin {
         loadConfig();
 
         getLogger().info(ChatColor.AQUA + "Registering listener");
-        getProxy().getPluginManager().registerListener(this, new ChatListener(this));
+        getServer().getPluginManager().registerEvents(new ChatListener(this), this);
 
         getLogger().info(ChatColor.AQUA + "Registering command");
-        getProxy().getPluginManager().registerCommand(this, new FilterCommand(this));
+        getServer().getPluginCommand("pistonfilter").setExecutor(new FilterCommand(this));
 
         getLogger().info(ChatColor.AQUA + "Done! :D");
     }
@@ -35,17 +34,13 @@ public class PistonFilter extends Plugin {
         File file = new File(getDataFolder(), "config.yml");
 
         if (!file.exists()) {
-            try (InputStream in = getResourceAsStream("config.yml")) {
+            try (InputStream in = getResource("config.yml")) {
                 Files.copy(in, file.toPath());
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
 
-        try {
-            config = ConfigurationProvider.getProvider(YamlConfiguration.class).load(new File(getDataFolder(), "config.yml"));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        config = YamlConfiguration.loadConfiguration(new File(getDataFolder(), "config.yml"));
     }
 }

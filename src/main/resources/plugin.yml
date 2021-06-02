@@ -2,3 +2,7 @@ name: PistonFilter
 version: ${project.version}
 main: net.pistonmaster.pistonfilter.PistonFilter
 description: Shadow prevents people from posting unwanted text.
+depend: [ "PistonChat" ]
+commands:
+  pistonfilter:
+    description: Main command for PistonFilter
