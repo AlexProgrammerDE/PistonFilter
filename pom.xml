@@ -6,12 +6,12 @@
 
     <groupId>net.pistonmaster</groupId>
     <artifactId>PistonFilter</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <packaging>jar</packaging>
 
     <name>PistonFilter</name>
 
-    <description>Shadow prevents people from posting unwanted text.</description>
+    <description>Chat filter companion for PistonChat.</description>
     <properties>
         <java.version>1.8</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

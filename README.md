@@ -1,2 +1,2 @@
 # PistonFilter
-Shadow prevents people from posting unwanted text.
+Chat filter companion for PistonChat.
