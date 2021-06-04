@@ -1,10 +1,11 @@
-package net.pistonmaster.pistonfilter;
+package net.pistonmaster.pistonfilter.listeners;
 
 import lombok.RequiredArgsConstructor;
 import net.md_5.bungee.api.ChatColor;
 import net.pistonmaster.pistonchat.api.PistonChatEvent;
 import net.pistonmaster.pistonchat.api.PistonWhisperEvent;
 import net.pistonmaster.pistonchat.utils.CommonTool;
+import net.pistonmaster.pistonfilter.PistonFilter;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
@@ -49,15 +50,15 @@ public class ChatListener implements Listener {
 
         String cutMessage = message.toLowerCase().replace(" ", "").replaceAll("\\s+", "");
 
-        for (String str : plugin.config.getStringList("banned-text")) {
+        for (String str : plugin.getConfig().getStringList("banned-text")) {
             if (Pattern.compile(toLeetPattern(str).toLowerCase()).matcher(cutMessage).find()) {
                 event.setCancelled(true);
 
-                if (plugin.config.getBoolean("message-sender")) {
+                if (plugin.getConfig().getBoolean("message-sender")) {
                     CommonTool.sendChatMessage(event.getPlayer(), event.getMessage(), event.getPlayer());
                 }
 
-                if (plugin.config.getBoolean("verbose")) {
+                if (plugin.getConfig().getBoolean("verbose")) {
                     plugin.getLogger().info(ChatColor.RED + "[AntiSpam] <" + event.getPlayer().getName() + "> " + event.getMessage());
                 }
 
@@ -74,15 +75,15 @@ public class ChatListener implements Listener {
 
         String cutMessage = message.toLowerCase().replace(" ", "").replaceAll("\\s+", "");
 
-        for (String str : plugin.config.getStringList("banned-text")) {
+        for (String str : plugin.getConfig().getStringList("banned-text")) {
             if (Pattern.compile(toLeetPattern(str).toLowerCase()).matcher(cutMessage).find()) {
                 event.setCancelled(true);
 
-                if (plugin.config.getBoolean("message-sender")) {
+                if (plugin.getConfig().getBoolean("message-sender")) {
                     CommonTool.sendSender(event.getSender(), message, event.getReceiver());
                 }
 
-                if (plugin.config.getBoolean("verbose")) {
+                if (plugin.getConfig().getBoolean("verbose")) {
                     plugin.getLogger().info(ChatColor.RED + "[AntiSpam] <" + event.getSender().getName() + "> " + event.getMessage());
                 }
 

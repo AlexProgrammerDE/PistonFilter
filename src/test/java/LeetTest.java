@@ -1,5 +1,5 @@
 import com.mifmif.common.regex.Generex;
-import net.pistonmaster.pistonfilter.ChatListener;
+import net.pistonmaster.pistonfilter.listeners.ChatListener;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
