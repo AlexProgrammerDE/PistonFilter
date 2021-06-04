@@ -1,2 +1,2 @@
 # PistonFilter
-Chat filter companion for PistonChat.
+Chat filter addon for PistonChat.

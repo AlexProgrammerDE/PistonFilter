@@ -1,7 +1,7 @@
 name: PistonFilter
 version: ${project.version}
 main: net.pistonmaster.pistonfilter.PistonFilter
-description: Chat filter companion for PistonChat.
+description: Chat filter addon for PistonChat.
 depend: [ "PistonChat" ]
 commands:
   pistonfilter:
