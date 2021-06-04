@@ -1,6 +1,7 @@
 package net.pistonmaster.pistonfilter;
 
 import net.md_5.bungee.api.ChatColor;
+import org.bstats.bukkit.Metrics;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -23,6 +24,9 @@ public class PistonFilter extends JavaPlugin {
 
         getLogger().info(ChatColor.AQUA + "Registering command");
         getServer().getPluginCommand("pistonfilter").setExecutor(new FilterCommand(this));
+
+        getLogger().info(ChatColor.AQUA + "Loading metrics");
+        new Metrics(this, 11561);
 
         getLogger().info(ChatColor.AQUA + "Done! :D");
     }
