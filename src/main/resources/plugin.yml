@@ -6,3 +6,11 @@ depend: [ "PistonChat" ]
 commands:
   pistonfilter:
     description: Main command for PistonFilter
+    permission: pistonfilter.admin
+permissions:
+  pistonfilter.admin:
+    description: Admin permission for PistonFilter
+    children:
+      pistonfilter.bypass: true
+  pistonfilter.bypass:
+    description: Permission to bypass the chatfilter
