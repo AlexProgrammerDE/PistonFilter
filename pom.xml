@@ -160,7 +160,7 @@
         <dependency>
             <groupId>com.github.AlexProgrammerDE</groupId>
             <artifactId>PistonChat</artifactId>
-            <version>a94a8612c5</version>
+            <version>1.5.1</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
