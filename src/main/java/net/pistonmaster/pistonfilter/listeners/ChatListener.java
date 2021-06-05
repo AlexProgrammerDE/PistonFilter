@@ -71,6 +71,8 @@ public class ChatListener implements Listener {
     public void onWhisper(PistonWhisperEvent event) {
         String message = event.getMessage();
 
+        if (event.getSender() == event.getReceiver()) return;
+
         if (event.getSender().hasPermission("pistonfilter.bypass")) return;
 
         String cutMessage = message.toLowerCase().replace(" ", "").replaceAll("\\s+", "");
