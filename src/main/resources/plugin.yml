@@ -10,6 +10,7 @@ commands:
 permissions:
   pistonfilter.admin:
     description: Admin permission for PistonFilter
+    default: op
     children:
       pistonfilter.bypass: true
   pistonfilter.bypass:
