@@ -74,7 +74,11 @@
                             <relocations>
                                 <relocation>
                                     <pattern>org.bstats</pattern>
-                                    <shadedPattern>net.pistonmaster.pistonfilter.bstats</shadedPattern>
+                                    <shadedPattern>net.pistonmaster.pistonfilter.shade.bstats</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>net.pistonmaster.pistonutils</pattern>
+                                    <shadedPattern>net.pistonmaster.pistonfilter.shade.pistonutils</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>
@@ -181,7 +185,16 @@
             <groupId>org.bstats</groupId>
             <artifactId>bstats-bukkit</artifactId>
             <version>2.2.1</version>
-            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.pistonmaster</groupId>
+            <artifactId>PistonUtils</artifactId>
+            <version>1.2.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.7.30</version>
         </dependency>
     </dependencies>
 </project>

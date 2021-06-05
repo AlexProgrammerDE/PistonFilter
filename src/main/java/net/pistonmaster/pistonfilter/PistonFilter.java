@@ -3,24 +3,50 @@ package net.pistonmaster.pistonfilter;
 import net.md_5.bungee.api.ChatColor;
 import net.pistonmaster.pistonfilter.commands.FilterCommand;
 import net.pistonmaster.pistonfilter.listeners.ChatListener;
+import net.pistonmaster.pistonutils.logging.PistonLogger;
+import net.pistonmaster.pistonutils.update.UpdateChecker;
+import net.pistonmaster.pistonutils.update.UpdateParser;
+import net.pistonmaster.pistonutils.update.UpdateType;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.logging.Logger;
 
 public class PistonFilter extends JavaPlugin {
     @Override
     public void onEnable() {
-        getLogger().info(ChatColor.AQUA + "Loading config");
+        Logger log = getLogger();
+        log.info(ChatColor.AQUA + "Loading config");
         saveDefaultConfig();
 
-        getLogger().info(ChatColor.AQUA + "Registering commands");
+        log.info(ChatColor.AQUA + "Registering commands");
         getServer().getPluginCommand("pistonfilter").setExecutor(new FilterCommand(this));
+        getServer().getPluginCommand("pistonfilter").setTabCompleter(new FilterCommand(this));
 
-        getLogger().info(ChatColor.AQUA + "Registering listeners");
+        log.info(ChatColor.AQUA + "Registering listeners");
         getServer().getPluginManager().registerEvents(new ChatListener(this), this);
 
-        getLogger().info(ChatColor.AQUA + "Loading metrics");
+        log.info(ChatColor.AQUA + "Loading metrics");
         new Metrics(this, 11561);
 
-        getLogger().info(ChatColor.AQUA + "Done! :D");
+        log.info(org.bukkit.ChatColor.YELLOW + "Checking for a newer version");
+        new UpdateChecker(new PistonLogger(getLogger())).getVersion("https://www.pistonmaster.net/PistonFilter/VERSION.txt", version -> new UpdateParser(getDescription().getVersion(), version).parseUpdate(updateType -> {
+            if (updateType == UpdateType.NONE || updateType == UpdateType.AHEAD) {
+                log.info(ChatColor.DARK_GREEN + "You're up to date!");
+            } else {
+                if (updateType == UpdateType.MAJOR) {
+                    log.info(ChatColor.RED + "There is a MAJOR update available!");
+                } else if (updateType == UpdateType.MINOR) {
+                    log.info(ChatColor.RED + "There is a MINOR update available!");
+                } else if (updateType == UpdateType.PATCH) {
+                    log.info(ChatColor.RED + "There is a PATCH update available!");
+                }
+
+                log.info(ChatColor.RED + "Current version: " + this.getDescription().getVersion() + " New version: " + version);
+                log.info(ChatColor.RED + "Download it at: https://github.com/AlexProgrammerDE/PistonFilter/releases");
+            }
+        }));
+
+        log.info(ChatColor.AQUA + "Done! :D");
     }
 }
