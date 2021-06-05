@@ -8,6 +8,8 @@ import net.pistonmaster.pistonutils.update.UpdateChecker;
 import net.pistonmaster.pistonutils.update.UpdateParser;
 import net.pistonmaster.pistonutils.update.UpdateType;
 import org.bstats.bukkit.Metrics;
+import org.bukkit.Server;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.logging.Logger;
@@ -16,12 +18,18 @@ public class PistonFilter extends JavaPlugin {
     @Override
     public void onEnable() {
         Logger log = getLogger();
+        Server server = getServer();
+
         log.info(ChatColor.AQUA + "Loading config");
         saveDefaultConfig();
 
         log.info(ChatColor.AQUA + "Registering commands");
-        getServer().getPluginCommand("pistonfilter").setExecutor(new FilterCommand(this));
-        getServer().getPluginCommand("pistonfilter").setTabCompleter(new FilterCommand(this));
+        PluginCommand main = server.getPluginCommand("pistonfilter");
+
+        if (main != null) {
+            main.setExecutor(new FilterCommand(this));
+            main.setTabCompleter(new FilterCommand(this));
+        }
 
         log.info(ChatColor.AQUA + "Registering listeners");
         getServer().getPluginManager().registerEvents(new ChatListener(this), this);
