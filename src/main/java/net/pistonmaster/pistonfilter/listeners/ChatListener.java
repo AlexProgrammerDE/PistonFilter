@@ -1,46 +1,29 @@
 package net.pistonmaster.pistonfilter.listeners;
 
 import lombok.RequiredArgsConstructor;
+import me.xdrop.fuzzywuzzy.FuzzySearch;
 import net.md_5.bungee.api.ChatColor;
 import net.pistonmaster.pistonchat.api.PistonChatEvent;
 import net.pistonmaster.pistonchat.api.PistonWhisperEvent;
 import net.pistonmaster.pistonchat.utils.CommonTool;
+import net.pistonmaster.pistonchat.utils.UniqueSender;
 import net.pistonmaster.pistonfilter.PistonFilter;
+import net.pistonmaster.pistonfilter.utils.FilteredPlayer;
+import net.pistonmaster.pistonfilter.utils.StringHelper;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 @RequiredArgsConstructor
 public class ChatListener implements Listener {
     private final PistonFilter plugin;
-
-    public static String toLeetPattern(String str) {
-        str = str.toUpperCase();
-
-        char[] english = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'};
-        String[] leet = {"[A4]", "[B8]", "[C\\(]", "[D\\)]", "[E3]", "[F\\}]", "[G6]", "[H#]", "[I!]", "[J\\]]", "[KX]", "[L|]", "[M]", "[N]", "[O0]", "[P9]", "[Q]", "[R2]", "[SZ]", "[T7]", "[UM]", "[V]", "[W]", "[X]", "[J]", "[Z]"};
-        StringBuilder result = new StringBuilder();
-
-        for (int i = 0; i < str.length(); i++) {
-            char tmp = str.charAt(i);
-            boolean foundMatch = false;
-
-            for (int j = 0; j < english.length; j++) {
-                if (tmp == english[j]) {
-                    result.append(leet[j]);
-                    foundMatch = true;
-                    break;
-                }
-            }
-
-            if (!foundMatch) {
-                result.append("\\").append(tmp);
-            }
-        }
-
-        return result.toString();
-    }
+    private final List<FilteredPlayer> players = new ArrayList<>();
 
     @EventHandler
     public void onChat(PistonChatEvent event) {
@@ -51,7 +34,7 @@ public class ChatListener implements Listener {
         String cutMessage = message.toLowerCase().replace(" ", "").replaceAll("\\s+", "");
 
         for (String str : plugin.getConfig().getStringList("banned-text")) {
-            if (Pattern.compile(toLeetPattern(str).toLowerCase()).matcher(cutMessage).find()) {
+            if (Pattern.compile(StringHelper.toLeetPattern(str).toLowerCase()).matcher(cutMessage).find()) {
                 event.setCancelled(true);
 
                 if (plugin.getConfig().getBoolean("message-sender")) {
@@ -63,6 +46,33 @@ public class ChatListener implements Listener {
                 }
 
                 break;
+            }
+        }
+
+        if (!event.isCancelled() && plugin.getConfig().getBoolean("norepeat", true)) {
+            boolean blocked = false;
+            FilteredPlayer filteredPlayerCached = null;
+            for (FilteredPlayer filteredPlayer : players) {
+                if (filteredPlayer.getId().equals(event.getPlayer().getUniqueId())) {
+                    filteredPlayerCached = filteredPlayer;
+
+                    for (Map.Entry<String, Instant> entry : filteredPlayer.getMessages().entrySet()) {
+                        if (Duration.between(entry.getValue(), Instant.now()).getSeconds() < plugin.getConfig().getInt("norepeatmaxdelay", 15)
+                                && FuzzySearch.ratio(entry.getKey(), cutMessage) > plugin.getConfig().getInt("similarration", 90)) {
+                            blocked = true;
+                            event.setCancelled(true);
+                        }
+                    }
+                }
+            }
+
+            if (!blocked) {
+                if (filteredPlayerCached == null) {
+                    filteredPlayerCached = new FilteredPlayer(event.getPlayer().getUniqueId());
+                    players.add(filteredPlayerCached);
+                }
+
+                filteredPlayerCached.getMessages().put(cutMessage, Instant.now());
             }
         }
     }
@@ -78,7 +88,7 @@ public class ChatListener implements Listener {
         String cutMessage = message.toLowerCase().replace(" ", "").replaceAll("\\s+", "");
 
         for (String str : plugin.getConfig().getStringList("banned-text")) {
-            if (Pattern.compile(toLeetPattern(str).toLowerCase()).matcher(cutMessage).find()) {
+            if (Pattern.compile(StringHelper.toLeetPattern(str).toLowerCase()).matcher(cutMessage).find()) {
                 event.setCancelled(true);
 
                 if (plugin.getConfig().getBoolean("message-sender")) {
@@ -90,6 +100,33 @@ public class ChatListener implements Listener {
                 }
 
                 break;
+            }
+        }
+
+        if (!event.isCancelled() && plugin.getConfig().getBoolean("norepeat", true)) {
+            boolean blocked = false;
+            FilteredPlayer filteredPlayerCached = null;
+            for (FilteredPlayer filteredPlayer : players) {
+                if (filteredPlayer.getId().equals(new UniqueSender(event.getSender()).getUniqueId())) {
+                    filteredPlayerCached = filteredPlayer;
+
+                    for (Map.Entry<String, Instant> entry : filteredPlayer.getMessages().entrySet()) {
+                        if (Duration.between(entry.getValue(), Instant.now()).getSeconds() < plugin.getConfig().getInt("norepeatmaxdelay", 15)
+                                && FuzzySearch.ratio(entry.getKey(), cutMessage) > plugin.getConfig().getInt("similarration", 90)) {
+                            blocked = true;
+                            event.setCancelled(true);
+                        }
+                    }
+                }
+            }
+
+            if (!blocked) {
+                if (filteredPlayerCached == null) {
+                    filteredPlayerCached = new FilteredPlayer(new UniqueSender(event.getSender()).getUniqueId());
+                    players.add(filteredPlayerCached);
+                }
+
+                filteredPlayerCached.getMessages().put(cutMessage, Instant.now());
             }
         }
     }

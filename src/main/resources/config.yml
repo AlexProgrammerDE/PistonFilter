@@ -1,5 +1,8 @@
 verbose: true
 message-sender: true
+norepeat: true
+similarration: 90
+norepeatmaxdelay: 15
 banned-text:
   - "http"
   - "https"
