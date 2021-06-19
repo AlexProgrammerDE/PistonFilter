@@ -61,6 +61,14 @@ public class ChatListener implements Listener {
                                 && FuzzySearch.ratio(entry.getKey(), cutMessage) > plugin.getConfig().getInt("similarration", 90)) {
                             blocked = true;
                             event.setCancelled(true);
+
+                            if (plugin.getConfig().getBoolean("message-sender")) {
+                                CommonTool.sendChatMessage(event.getPlayer(), event.getMessage(), event.getPlayer());
+                            }
+
+                            if (plugin.getConfig().getBoolean("verbose")) {
+                                plugin.getLogger().info(ChatColor.RED + "[AntiSpam] <" + event.getPlayer().getName() + "> " + event.getMessage());
+                            }
                         }
                     }
                 }
@@ -115,6 +123,14 @@ public class ChatListener implements Listener {
                                 && FuzzySearch.ratio(entry.getKey(), cutMessage) > plugin.getConfig().getInt("similarration", 90)) {
                             blocked = true;
                             event.setCancelled(true);
+
+                            if (plugin.getConfig().getBoolean("message-sender")) {
+                                CommonTool.sendSender(event.getSender(), message, event.getReceiver());
+                            }
+
+                            if (plugin.getConfig().getBoolean("verbose")) {
+                                plugin.getLogger().info(ChatColor.RED + "[AntiSpam] <" + event.getSender().getName() + "> " + event.getMessage());
+                            }
                         }
                     }
                 }
