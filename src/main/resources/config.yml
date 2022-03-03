@@ -3,6 +3,8 @@ message-sender: true
 norepeat: true
 similarration: 90
 norepeatmaxdelay: 15
+# Example: "2 5f gg 8b 33 hj 6zb 6573" has 8 words and 6 words with numbers
+max-words-with-numbers: 5
 banned-text:
   - "http"
   - "https"
@@ -15,3 +17,4 @@ banned-text:
   - ".cc"
   - ".tk"
   - ".ga"
+  - ".gg"

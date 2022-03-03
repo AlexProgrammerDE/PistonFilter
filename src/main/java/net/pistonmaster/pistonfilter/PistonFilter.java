@@ -38,7 +38,7 @@ public class PistonFilter extends JavaPlugin {
         new Metrics(this, 11561);
 
         log.info(ChatColor.AQUA + "Checking for a newer version");
-        new UpdateChecker(new PistonLogger(getLogger())).getVersion("https://www.pistonmaster.net/PistonFilter/VERSION.txt", version -> new UpdateParser(getDescription().getVersion(), version).parseUpdate(updateType -> {
+        new UpdateChecker(new PistonLogger(getLogger()::info, getLogger()::warning)).getVersion("https://www.pistonmaster.net/PistonFilter/VERSION.txt", version -> new UpdateParser(getDescription().getVersion(), version).parseUpdate(updateType -> {
             if (updateType == UpdateType.NONE || updateType == UpdateType.AHEAD) {
                 log.info(ChatColor.AQUA + "You're up to date!");
             } else {

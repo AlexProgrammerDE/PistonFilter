@@ -6,7 +6,7 @@
 
     <groupId>net.pistonmaster</groupId>
     <artifactId>PistonFilter</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0</version>
     <packaging>jar</packaging>
 
     <name>PistonFilter</name>
@@ -154,7 +154,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.20</version>
+            <version>1.18.22</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -166,7 +166,7 @@
         <dependency>
             <groupId>me.xdrop</groupId>
             <artifactId>fuzzywuzzy</artifactId>
-            <version>1.3.1</version>
+            <version>1.4.0</version>
         </dependency>
         <dependency>
             <groupId>com.github.mifmif</groupId>
@@ -177,29 +177,24 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
-            <version>5.7.2</version>
+            <version>5.8.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-            <version>5.7.2</version>
+            <version>5.8.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.bstats</groupId>
             <artifactId>bstats-bukkit</artifactId>
-            <version>2.2.1</version>
+            <version>3.0.0</version>
         </dependency>
         <dependency>
             <groupId>net.pistonmaster</groupId>
             <artifactId>PistonUtils</artifactId>
-            <version>1.2.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <version>1.7.31</version>
+            <version>1.3.2</version>
         </dependency>
     </dependencies>
 </project>
