@@ -18,6 +18,7 @@ import org.bukkit.event.Listener;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 @RequiredArgsConstructor
@@ -27,17 +28,21 @@ public class ChatListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onChat(PistonChatEvent event) {
-        handleMessage(event.getPlayer(), event.getMessage(), () -> event.setCancelled(true));
+        handleMessage(event.getPlayer(), event.getMessage(),
+                () -> event.setCancelled(true),
+                message -> CommonTool.sendChatMessage(event.getPlayer(), message, event.getPlayer()));
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onWhisper(PistonWhisperEvent event) {
         if (event.getSender() == event.getReceiver()) return;
 
-        handleMessage(event.getSender(), event.getMessage(), () -> event.setCancelled(true));
+        handleMessage(event.getSender(), event.getMessage(),
+                () -> event.setCancelled(true),
+                message -> CommonTool.sendSender(event.getSender(), message, event.getReceiver()));
     }
 
-    public void handleMessage(CommandSender sender, String message, Runnable cancelEvent) {
+    public void handleMessage(CommandSender sender, String message, Runnable cancelEvent, Consumer<String> sendEmpty) {
         Instant now = Instant.now();
         if (sender.hasPermission("pistonfilter.bypass")) return;
 
@@ -46,20 +51,20 @@ public class ChatListener implements Listener {
 
         for (String str : plugin.getConfig().getStringList("banned-text")) {
             if (Pattern.compile(StringHelper.toLeetPattern(str).toLowerCase()).matcher(cutMessage).find()) {
-                cancelMessage(sender, message, cancelEvent);
+                cancelMessage(sender, message, cancelEvent, sendEmpty);
                 return;
             }
         }
 
         int wordsWithNumbers = 0;
         for (String word : words) {
-            if (word.matches("[0-9]+")) {
+            if (StringHelper.containsDigit(word)) {
                 wordsWithNumbers++;
             }
         }
 
         if (wordsWithNumbers > plugin.getConfig().getInt("max-words-with-numbers")) {
-            cancelMessage(sender, message, cancelEvent);
+            cancelMessage(sender, message, cancelEvent, sendEmpty);
             return;
         }
 
@@ -80,10 +85,10 @@ public class ChatListener implements Listener {
 
                     if (Duration.between(lastMessageTime, now).getSeconds() < plugin.getConfig().getInt("norepeat-time")) {
                         blocked = true;
-                        cancelMessage(sender, message, cancelEvent);
+                        cancelMessage(sender, message, cancelEvent, sendEmpty);
                     } else if (FuzzySearch.ratio(lastMessageText, cutMessage) > plugin.getConfig().getInt("similarration")) {
                         blocked = true;
-                        cancelMessage(sender, message, cancelEvent);
+                        cancelMessage(sender, message, cancelEvent, sendEmpty);
                     }
                 }
             }
@@ -99,11 +104,11 @@ public class ChatListener implements Listener {
         }
     }
 
-    private void cancelMessage(CommandSender sender, String message, Runnable cancelEvent) {
+    private void cancelMessage(CommandSender sender, String message, Runnable cancelEvent, Consumer<String> sendEmpty) {
         cancelEvent.run();
 
         if (plugin.getConfig().getBoolean("message-sender")) {
-            CommonTool.sendSender(sender, message, sender);
+            sendEmpty.accept(message);
         }
 
         if (plugin.getConfig().getBoolean("verbose")) {

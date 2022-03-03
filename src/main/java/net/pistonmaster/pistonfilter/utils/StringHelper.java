@@ -27,4 +27,14 @@ public class StringHelper {
 
         return result.toString();
     }
+
+    public static boolean containsDigit(String s) {
+        for (char c : s.toCharArray()) {
+            if (Character.isDigit(c)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
