@@ -14,17 +14,24 @@ import net.pistonmaster.pistonfilter.utils.StringHelper;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 @RequiredArgsConstructor
 public class ChatListener implements Listener {
     private final PistonFilter plugin;
-    private final List<FilteredPlayer> players = new ArrayList<>();
+    private final Map<UUID, FilteredPlayer> players = new ConcurrentHashMap<>();
+
+    @EventHandler(ignoreCancelled = true)
+    public void onQuit(PlayerQuitEvent event) {
+        players.remove(event.getPlayer().getUniqueId());
+    }
 
     @EventHandler(ignoreCancelled = true)
     public void onChat(PistonChatEvent event) {
@@ -71,10 +78,7 @@ public class ChatListener implements Listener {
         if (plugin.getConfig().getBoolean("norepeat")) {
             boolean blocked = false;
             UUID uuid = new UniqueSender(sender).getUniqueId();
-            FilteredPlayer filteredPlayerCached = players.stream()
-                    .filter(filteredPlayerEntry -> filteredPlayerEntry.getId().equals(uuid))
-                    .findFirst()
-                    .orElse(null);
+            FilteredPlayer filteredPlayerCached = players.get(uuid);
 
             if (filteredPlayerCached != null) {
                 Pair<Instant, String> lastMessage = filteredPlayerCached.getLastMessage();
@@ -96,7 +100,7 @@ public class ChatListener implements Listener {
             if (!blocked) {
                 if (filteredPlayerCached == null) {
                     filteredPlayerCached = new FilteredPlayer(new UniqueSender(sender).getUniqueId());
-                    players.add(filteredPlayerCached);
+                    players.put(uuid, filteredPlayerCached);
                 }
 
                 filteredPlayerCached.setLastMessage(new Pair<>(Instant.now(), cutMessage));
