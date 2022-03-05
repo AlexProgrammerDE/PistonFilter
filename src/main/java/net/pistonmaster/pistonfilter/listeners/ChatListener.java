@@ -22,6 +22,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 public class ChatListener implements Listener {
@@ -65,6 +66,12 @@ public class ChatListener implements Listener {
 
         int wordsWithNumbers = 0;
         for (String word : words) {
+            if (word.length() > plugin.getConfig().getInt("max-word-length")
+                    || hasInvalidSeparators(word)) {
+                cancelMessage(sender, message, cancelEvent, sendEmpty);
+                return;
+            }
+
             if (StringHelper.containsDigit(word)) {
                 wordsWithNumbers++;
             }
@@ -87,10 +94,8 @@ public class ChatListener implements Listener {
                     Instant lastMessageTime = lastMessage.getKey();
                     String lastMessageText = lastMessage.getValue();
 
-                    if (Duration.between(lastMessageTime, now).getSeconds() < plugin.getConfig().getInt("norepeat-time")) {
-                        blocked = true;
-                        cancelMessage(sender, message, cancelEvent, sendEmpty);
-                    } else if (FuzzySearch.ratio(lastMessageText, cutMessage) > plugin.getConfig().getInt("similarration")) {
+                    if (Duration.between(lastMessageTime, now).getSeconds() < plugin.getConfig().getInt("norepeat-time")
+                        || FuzzySearch.ratio(lastMessageText, cutMessage) > plugin.getConfig().getInt("similarration")) {
                         blocked = true;
                         cancelMessage(sender, message, cancelEvent, sendEmpty);
                     }
@@ -106,6 +111,30 @@ public class ChatListener implements Listener {
                 filteredPlayerCached.setLastMessage(new Pair<>(Instant.now(), cutMessage));
             }
         }
+    }
+
+    private boolean hasInvalidSeparators(String word) {
+        List<Character> chars = word.chars().mapToObj(c -> (char) c).collect(Collectors.toList());
+        int maxSeparators = plugin.getConfig().getInt("max-separated-numbers");
+
+        int separators = 0;
+        int index = 0;
+        for (char c : chars) {
+            if (Character.isDigit(c)) {
+                if (index >= (chars.size() - 1)) {
+                    return false;
+                } else {
+                    if (!Character.isDigit(chars.get(index + 1))) {
+                        separators++;
+                        if (separators > maxSeparators) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            index++;
+        }
+        return false;
     }
 
     private void cancelMessage(CommandSender sender, String message, Runnable cancelEvent, Consumer<String> sendEmpty) {
