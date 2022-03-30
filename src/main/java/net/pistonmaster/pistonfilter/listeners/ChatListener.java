@@ -11,15 +11,19 @@ import net.pistonmaster.pistonfilter.PistonFilter;
 import net.pistonmaster.pistonfilter.utils.FilteredPlayer;
 import net.pistonmaster.pistonfilter.utils.Pair;
 import net.pistonmaster.pistonfilter.utils.StringHelper;
+import okhttp3.*;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -28,6 +32,9 @@ import java.util.stream.Collectors;
 public class ChatListener implements Listener {
     private final PistonFilter plugin;
     private final Map<UUID, FilteredPlayer> players = new ConcurrentHashMap<>();
+    private final OkHttpClient client = new OkHttpClient();
+    public static final MediaType TEXT_PLAIN = MediaType.get("text/plain; charset=utf-8");
+    private final AtomicInteger backendCounter = new AtomicInteger();
 
     @EventHandler(ignoreCancelled = true)
     public void onQuit(PlayerQuitEvent event) {
@@ -53,6 +60,18 @@ public class ChatListener implements Listener {
     public void handleMessage(CommandSender sender, String message, Runnable cancelEvent, Consumer<String> sendEmpty) {
         Instant now = Instant.now();
         if (sender.hasPermission("pistonfilter.bypass")) return;
+
+        if (plugin.getConfig().getBoolean("backend-processing.enable")) {
+            if (plugin.getConfig().getString("backend-processing.strategy").equals("before")
+                    && !backendProcess(sender, message, 0)) {
+                cancelMessage(sender, message, cancelEvent, sendEmpty);
+                return;
+            } else if (plugin.getConfig().getString("backend-processing.strategy").equals("exclusive")) {
+                if (!backendProcess(sender, message, 0))
+                    cancelMessage(sender, message, cancelEvent, sendEmpty);
+                return;
+            }
+        }
 
         String[] words = Arrays.stream(message.split(" ")).filter(word -> !word.isEmpty()).toArray(String[]::new);
         String cutMessage = message.toLowerCase().replace(" ", "").replaceAll("\\s+", "");
@@ -111,6 +130,12 @@ public class ChatListener implements Listener {
                 filteredPlayerCached.setLastMessage(new Pair<>(Instant.now(), cutMessage));
             }
         }
+
+        if (plugin.getConfig().getBoolean("backend-processing.enable")
+                && plugin.getConfig().getString("backend-processing.strategy").equals("after")
+                && !backendProcess(sender, message, 0)) {
+            cancelMessage(sender, message, cancelEvent, sendEmpty);
+        }
     }
 
     private boolean hasInvalidSeparators(String word) {
@@ -135,6 +160,38 @@ public class ChatListener implements Listener {
             index++;
         }
         return false;
+    }
+
+    private boolean backendProcess(CommandSender sender, String message, int retries) {
+        boolean responseOnError = plugin.getConfig().getBoolean("backend-processing.response-on-error");
+        int timeout = plugin.getConfig().getInt("backend-processing.timeout");
+
+        if (retries > plugin.getConfig().getInt("backend-processing.retries"))
+            return responseOnError;
+
+        List<String> servers = plugin.getConfig().getStringList("backend-processing.servers");
+        RequestBody body = RequestBody.create(sender.getName() + ";" + message, TEXT_PLAIN); // assuming usernames with character ";" do not exist, may be improved with JSON, but nah
+        Request request = new Request.Builder()
+                .url(servers.get(backendCounter.incrementAndGet() % servers.size())) // % and atomics are kind of slow, there is a room for improvement there
+                .post(body)
+                .build();
+
+        OkHttpClient dirtyClient = client.newBuilder()
+                .connectTimeout(timeout, TimeUnit.MILLISECONDS)
+                .writeTimeout(timeout, TimeUnit.MILLISECONDS)
+                .readTimeout(timeout, TimeUnit.MILLISECONDS)
+                .build();
+
+        try (Response response = dirtyClient.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                plugin.getLogger().severe(ChatColor.RED + "[AntiSpam] Request to a backend processor failed");
+                return backendProcess(sender, message, retries + 1);
+            }
+            return response.body().string().equals("true"); // Could be improved by receiving only one bit over UDP, I suggest rewriting the whole thing in assembler
+        } catch (IOException e) {
+            plugin.getLogger().severe(ChatColor.RED + "[AntiSpam] Request to a backend processor failed");
+            return backendProcess(sender, message, retries + 1);
+        }
     }
 
     private void cancelMessage(CommandSender sender, String message, Runnable cancelEvent, Consumer<String> sendEmpty) {
