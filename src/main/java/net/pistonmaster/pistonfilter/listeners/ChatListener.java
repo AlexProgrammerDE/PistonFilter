@@ -1,5 +1,7 @@
 package net.pistonmaster.pistonfilter.listeners;
 
+import com.squareup.moshi.JsonAdapter;
+import com.squareup.moshi.Moshi;
 import lombok.RequiredArgsConstructor;
 import me.xdrop.fuzzywuzzy.FuzzySearch;
 import net.md_5.bungee.api.ChatColor;
@@ -8,9 +10,7 @@ import net.pistonmaster.pistonchat.api.PistonWhisperEvent;
 import net.pistonmaster.pistonchat.utils.CommonTool;
 import net.pistonmaster.pistonchat.utils.UniqueSender;
 import net.pistonmaster.pistonfilter.PistonFilter;
-import net.pistonmaster.pistonfilter.utils.FilteredPlayer;
-import net.pistonmaster.pistonfilter.utils.Pair;
-import net.pistonmaster.pistonfilter.utils.StringHelper;
+import net.pistonmaster.pistonfilter.utils.*;
 import okhttp3.*;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.EventHandler;
@@ -33,7 +33,10 @@ public class ChatListener implements Listener {
     private final PistonFilter plugin;
     private final Map<UUID, FilteredPlayer> players = new ConcurrentHashMap<>();
     private final OkHttpClient client = new OkHttpClient();
-    public static final MediaType TEXT_PLAIN = MediaType.get("text/plain; charset=utf-8");
+    private final Moshi moshi = new Moshi.Builder().build();
+    private final JsonAdapter<Message> messageJsonAdapter = moshi.adapter(Message.class);
+    private final JsonAdapter<BackendResponse> backendResponseJsonAdapter = moshi.adapter(BackendResponse.class);
+    public static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
     private final AtomicInteger backendCounter = new AtomicInteger();
 
     @EventHandler(ignoreCancelled = true)
@@ -45,6 +48,7 @@ public class ChatListener implements Listener {
     public void onChat(PistonChatEvent event) {
         handleMessage(event.getPlayer(), event.getMessage(),
                 () -> event.setCancelled(true),
+                message -> event.setMessage(message),
                 message -> CommonTool.sendChatMessage(event.getPlayer(), message, event.getPlayer()));
     }
 
@@ -54,20 +58,29 @@ public class ChatListener implements Listener {
 
         handleMessage(event.getSender(), event.getMessage(),
                 () -> event.setCancelled(true),
+                message -> event.setMessage(message),
                 message -> CommonTool.sendSender(event.getSender(), message, event.getReceiver()));
     }
 
-    public void handleMessage(CommandSender sender, String message, Runnable cancelEvent, Consumer<String> sendEmpty) {
+    public void handleMessage(CommandSender sender, String message, Runnable cancelEvent, Consumer<String> modifyMessage, Consumer<String> sendEmpty) {
         Instant now = Instant.now();
         if (sender.hasPermission("pistonfilter.bypass")) return;
 
         if (plugin.getConfig().getBoolean("backend-processing.enable")) {
-            if (plugin.getConfig().getString("backend-processing.strategy").equals("before")
-                    && !backendProcess(sender, message, 0)) {
-                cancelMessage(sender, message, cancelEvent, sendEmpty);
-                return;
+            if (plugin.getConfig().getString("backend-processing.strategy").equals("before")) {
+                BackendResponse response = backendProcess(sender, message, 0);
+                if (response.replacement != null) {
+                    modifyMessage.accept(response.replacement);
+                } // No else in case of "message-sender" is true
+                if (!response.allowed) {
+                    cancelMessage(sender, message, cancelEvent, sendEmpty);
+                    return;
+                }
             } else if (plugin.getConfig().getString("backend-processing.strategy").equals("exclusive")) {
-                if (!backendProcess(sender, message, 0))
+                BackendResponse response = backendProcess(sender, message, 0);
+                if (response.replacement != null)
+                    modifyMessage.accept(response.replacement);
+                if (!response.allowed)
                     cancelMessage(sender, message, cancelEvent, sendEmpty);
                 return;
             }
@@ -132,9 +145,12 @@ public class ChatListener implements Listener {
         }
 
         if (plugin.getConfig().getBoolean("backend-processing.enable")
-                && plugin.getConfig().getString("backend-processing.strategy").equals("after")
-                && !backendProcess(sender, message, 0)) {
-            cancelMessage(sender, message, cancelEvent, sendEmpty);
+                && plugin.getConfig().getString("backend-processing.strategy").equals("after")) {
+            BackendResponse response = backendProcess(sender, message, 0);
+            if (response.replacement != null)
+                modifyMessage.accept(response.replacement);
+            if (!response.allowed)
+                cancelMessage(sender, message, cancelEvent, sendEmpty);
         }
     }
 
@@ -162,15 +178,18 @@ public class ChatListener implements Listener {
         return false;
     }
 
-    private boolean backendProcess(CommandSender sender, String message, int retries) {
-        boolean responseOnError = plugin.getConfig().getBoolean("backend-processing.response-on-error");
+    private BackendResponse backendProcess(CommandSender sender, String message, int retries) {
+        BackendResponse responseOnError = new BackendResponse(
+                plugin.getConfig().getBoolean("backend-processing.allow-on-error"),
+                null
+        );
         int timeout = plugin.getConfig().getInt("backend-processing.timeout");
 
         if (retries > plugin.getConfig().getInt("backend-processing.retries"))
             return responseOnError;
 
         List<String> servers = plugin.getConfig().getStringList("backend-processing.servers");
-        RequestBody body = RequestBody.create(sender.getName() + ";" + message, TEXT_PLAIN); // assuming usernames with character ";" do not exist, may be improved with JSON, but nah
+        RequestBody body = RequestBody.create(messageJsonAdapter.toJson(new Message(sender.getName(), message)), JSON);
         Request request = new Request.Builder()
                 .url(servers.get(backendCounter.incrementAndGet() % servers.size())) // % and atomics are kind of slow, there is a room for improvement there
                 .post(body)
@@ -182,12 +201,12 @@ public class ChatListener implements Listener {
                 .readTimeout(timeout, TimeUnit.MILLISECONDS)
                 .build();
 
-        try (Response response = dirtyClient.newCall(request).execute()) {
-            if (!response.isSuccessful()) {
+        try (Response res = dirtyClient.newCall(request).execute()) {
+            if (!res.isSuccessful()) {
                 plugin.getLogger().severe(ChatColor.RED + "[AntiSpam] Request to a backend processor failed");
                 return backendProcess(sender, message, retries + 1);
             }
-            return response.body().string().equals("true"); // Could be improved by receiving only one bit over UDP, I suggest rewriting the whole thing in assembler
+            return backendResponseJsonAdapter.fromJson(res.body().source());
         } catch (IOException e) {
             plugin.getLogger().severe(ChatColor.RED + "[AntiSpam] Request to a backend processor failed");
             return backendProcess(sender, message, retries + 1);
