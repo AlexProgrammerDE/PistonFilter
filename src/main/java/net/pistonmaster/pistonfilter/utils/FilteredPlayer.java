@@ -5,15 +5,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @RequiredArgsConstructor
 @Getter
 public class FilteredPlayer {
     private final UUID id;
-    @Setter
-    private volatile Pair<Instant, String> lastMessage;
+    private final Queue<Pair<Instant, String>> lastMessages;
 }

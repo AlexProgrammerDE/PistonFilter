@@ -26,10 +26,9 @@ public class PistonFilter extends JavaPlugin {
         log.info(ChatColor.AQUA + "Registering commands");
         PluginCommand main = server.getPluginCommand("pistonfilter");
 
-        if (main != null) {
-            main.setExecutor(new FilterCommand(this));
-            main.setTabCompleter(new FilterCommand(this));
-        }
+        assert main != null;
+        main.setExecutor(new FilterCommand(this));
+        main.setTabCompleter(new FilterCommand(this));
 
         log.info(ChatColor.AQUA + "Registering listeners");
         getServer().getPluginManager().registerEvents(new ChatListener(this), this);

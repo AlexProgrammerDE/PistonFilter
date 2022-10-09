@@ -1,6 +1,5 @@
 package net.pistonmaster.pistonfilter.listeners;
 
-import lombok.RequiredArgsConstructor;
 import me.xdrop.fuzzywuzzy.FuzzySearch;
 import net.md_5.bungee.api.ChatColor;
 import net.pistonmaster.pistonchat.api.PistonChatEvent;
@@ -11,6 +10,7 @@ import net.pistonmaster.pistonfilter.PistonFilter;
 import net.pistonmaster.pistonfilter.utils.FilteredPlayer;
 import net.pistonmaster.pistonfilter.utils.Pair;
 import net.pistonmaster.pistonfilter.utils.StringHelper;
+import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -24,10 +24,15 @@ import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-@RequiredArgsConstructor
 public class ChatListener implements Listener {
     private final PistonFilter plugin;
+    private final Queue<Pair<Instant, String>> globalMessages;
     private final Map<UUID, FilteredPlayer> players = new ConcurrentHashMap<>();
+
+    public ChatListener(PistonFilter plugin) {
+        this.plugin = plugin;
+        this.globalMessages = new CircularFifoQueue<>(plugin.getConfig().getInt("global-message-stack-size"));
+    }
 
     @EventHandler(ignoreCancelled = true)
     public void onQuit(PlayerQuitEvent event) {
@@ -82,38 +87,67 @@ public class ChatListener implements Listener {
             return;
         }
 
-        if (plugin.getConfig().getBoolean("norepeat")) {
+        if (plugin.getConfig().getBoolean("no-repeat")) {
             boolean blocked = false;
             UUID uuid = new UniqueSender(sender).getUniqueId();
             FilteredPlayer filteredPlayerCached = players.get(uuid);
-
+            int noRepeatTime = plugin.getConfig().getInt("no-repeat-time");
+            int similarRatio = plugin.getConfig().getInt("no-repeat-similar-ratio");
             if (filteredPlayerCached != null) {
-                Pair<Instant, String> lastMessage = filteredPlayerCached.getLastMessage();
+                Queue<Pair<Instant, String>> lastMessages = filteredPlayerCached.getLastMessages();
 
-                if (lastMessage != null) {
-                    Instant lastMessageTime = lastMessage.getKey();
-                    String lastMessageText = lastMessage.getValue();
+                blocked = isBlocked(sender, message, cancelEvent, sendEmpty, now, cutMessage, noRepeatTime, similarRatio, lastMessages, false);
+            }
 
-                    if (Duration.between(lastMessageTime, now).getSeconds() < plugin.getConfig().getInt("norepeat-time")
-                        || FuzzySearch.ratio(lastMessageText, cutMessage) > plugin.getConfig().getInt("similarration")) {
-                        blocked = true;
-                        cancelMessage(sender, message, cancelEvent, sendEmpty);
-                    }
-                }
+            if (!blocked && plugin.getConfig().getBoolean("global-repeat-check")) {
+                blocked = isBlocked(sender, message, cancelEvent, sendEmpty, now, cutMessage, noRepeatTime, similarRatio, globalMessages, true);
             }
 
             if (!blocked) {
                 if (filteredPlayerCached == null) {
-                    filteredPlayerCached = new FilteredPlayer(new UniqueSender(sender).getUniqueId());
+                    filteredPlayerCached = new FilteredPlayer(new UniqueSender(sender).getUniqueId(), new CircularFifoQueue<>(
+                            plugin.getConfig().getInt("no-repeat-stack-size")));
                     players.put(uuid, filteredPlayerCached);
                 }
 
-                filteredPlayerCached.setLastMessage(new Pair<>(Instant.now(), cutMessage));
+                filteredPlayerCached.getLastMessages().add(new Pair<>(now, cutMessage));
+                globalMessages.add(new Pair<>(now, cutMessage));
             }
         }
     }
 
+    private boolean isBlocked(CommandSender sender, String message,
+                              Runnable cancelEvent, Consumer<String> sendEmpty,
+                              Instant now, String cutMessage, int noRepeatTime,
+                              int similarRatio, Queue<Pair<Instant, String>> lastMessages,
+                              boolean global) {
+        boolean containsDigit = StringHelper.containsDigit(cutMessage);
+        int noRepeatNumberMessages = plugin.getConfig().getInt("no-repeat-number-messages");
+        int noRepeatNumberAmount = plugin.getConfig().getInt("no-repeat-number-amount");
+        int i = 0;
+        int foundDigits = 0;
+        for (Pair<Instant, String> pair : lastMessages) {
+            Instant messageTime = pair.getKey();
+            String messageText = pair.getValue();
+
+            if (!global && containsDigit && StringHelper.containsDigit(messageText)
+                    && i < noRepeatNumberMessages) {
+                foundDigits++;
+            }
+
+            if (foundDigits >= noRepeatNumberAmount ||
+                    (Duration.between(messageTime, now).getSeconds() < noRepeatTime
+                            && FuzzySearch.ratio(messageText, cutMessage) > similarRatio)) {
+                cancelMessage(sender, message, cancelEvent, sendEmpty);
+                return true;
+            }
+            i++;
+        }
+        return false;
+    }
+
     private boolean hasInvalidSeparators(String word) {
+        //noinspection Since15
         List<Character> chars = word.chars().mapToObj(c -> (char) c).collect(Collectors.toList());
         int maxSeparators = plugin.getConfig().getInt("max-separated-numbers");
 
