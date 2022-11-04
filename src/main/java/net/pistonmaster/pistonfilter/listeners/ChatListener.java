@@ -10,6 +10,7 @@ import net.pistonmaster.pistonfilter.PistonFilter;
 import net.pistonmaster.pistonfilter.utils.FilteredPlayer;
 import net.pistonmaster.pistonfilter.utils.Pair;
 import net.pistonmaster.pistonfilter.utils.StringHelper;
+import net.pistonmaster.pistonutils.StringUtil;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.EventHandler;
@@ -60,10 +61,10 @@ public class ChatListener implements Listener {
         if (sender.hasPermission("pistonfilter.bypass")) return;
 
         String[] words = Arrays.stream(message.split(" ")).filter(word -> !word.isEmpty()).toArray(String[]::new);
-        String cutMessage = message.toLowerCase().replace(" ", "").replaceAll("\\s+", "");
+        String cutMessage = StringHelper.revertLeet(message.toLowerCase().replace(" ", "").replaceAll("\\s+", ""));
 
         for (String str : plugin.getConfig().getStringList("banned-text")) {
-            if (Pattern.compile(StringHelper.toLeetPattern(str).toLowerCase()).matcher(cutMessage).find()) {
+            if (FuzzySearch.partialRatio(cutMessage, StringHelper.revertLeet(str)) > plugin.getConfig().getInt("banned-text-partial-ratio")) {
                 cancelMessage(sender, message, cancelEvent, sendEmpty);
                 return;
             }
@@ -137,7 +138,7 @@ public class ChatListener implements Listener {
 
             if (foundDigits >= noRepeatNumberAmount ||
                     (Duration.between(messageTime, now).getSeconds() < noRepeatTime
-                            && FuzzySearch.ratio(messageText, cutMessage) > similarRatio)) {
+                            && FuzzySearch.weightedRatio(messageText, cutMessage) > similarRatio)) {
                 cancelMessage(sender, message, cancelEvent, sendEmpty);
                 return true;
             }

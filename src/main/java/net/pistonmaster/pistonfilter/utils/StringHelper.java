@@ -1,31 +1,30 @@
 package net.pistonmaster.pistonfilter.utils;
 
 public class StringHelper {
-    public static String toLeetPattern(String str) {
-        str = str.toUpperCase();
+    public static String revertLeet(String str) {
+        str = str.toLowerCase();
 
-        char[] english = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'};
-        String[] leet = {"[A4]", "[B8]", "[C\\(]", "[D\\)]", "[E3]", "[F\\}]", "[G6]", "[H#]", "[I!]", "[J\\]]", "[KX]", "[L|]", "[M]", "[N]", "[O0]", "[P9]", "[Q]", "[R2]", "[SZ]", "[T7]", "[UM]", "[V]", "[W]", "[X]", "[J]", "[Z]"};
-        StringBuilder result = new StringBuilder();
+        str = str.replace("4", "a");
+        str = str.replace("&", "a");
+        str = str.replace("@", "a");
+        str = str.replace("8", "b");
+        str = str.replace("(", "c");
+        str = str.replace("3", "e");
+        str = str.replace("6", "g");
+        str = str.replace("9", "g");
+        str = str.replace("#", "h");
+        str = str.replace("1", "i");
+        str = str.replace("!", "i");
+        str = str.replace("]", "i");
+        str = str.replace("}", "i");
+        str = str.replace("0", "o");
+        str = str.replace("?", "o");
+        str = str.replace("5", "s");
+        str = str.replace("$", "s");
+        str = str.replace("7", "t");
+        str = str.replace("2", "z");
 
-        for (int i = 0; i < str.length(); i++) {
-            char tmp = str.charAt(i);
-            boolean foundMatch = false;
-
-            for (int j = 0; j < english.length; j++) {
-                if (tmp == english[j]) {
-                    result.append(leet[j]);
-                    foundMatch = true;
-                    break;
-                }
-            }
-
-            if (!foundMatch) {
-                result.append("\\").append(tmp);
-            }
-        }
-
-        return result.toString();
+        return str;
     }
 
     public static boolean containsDigit(String s) {

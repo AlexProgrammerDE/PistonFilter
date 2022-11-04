@@ -18,6 +18,7 @@ global-message-stack-size: 40
 max-words-with-numbers: 5
 max-separated-numbers: 3
 max-word-length: 20
+banned-text-partial-ratio: 40
 banned-text:
   - "http"
   - "https"
