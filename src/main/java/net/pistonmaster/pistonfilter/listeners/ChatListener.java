@@ -10,7 +10,6 @@ import net.pistonmaster.pistonfilter.PistonFilter;
 import net.pistonmaster.pistonfilter.utils.FilteredPlayer;
 import net.pistonmaster.pistonfilter.utils.Pair;
 import net.pistonmaster.pistonfilter.utils.StringHelper;
-import net.pistonmaster.pistonutils.StringUtil;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.EventHandler;
@@ -22,7 +21,6 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class ChatListener implements Listener {
@@ -65,16 +63,18 @@ public class ChatListener implements Listener {
 
         for (String str : plugin.getConfig().getStringList("banned-text")) {
             if (FuzzySearch.partialRatio(cutMessage, StringHelper.revertLeet(str)) > plugin.getConfig().getInt("banned-text-partial-ratio")) {
-                cancelMessage(sender, message, cancelEvent, sendEmpty);
+                cancelMessage(sender, message, cancelEvent, sendEmpty, String.format("Contains banned text: %s", str));
                 return;
             }
         }
 
         int wordsWithNumbers = 0;
         for (String word : words) {
-            if (word.length() > plugin.getConfig().getInt("max-word-length")
-                    || hasInvalidSeparators(word)) {
-                cancelMessage(sender, message, cancelEvent, sendEmpty);
+            if (word.length() > plugin.getConfig().getInt("max-word-length")) {
+                cancelMessage(sender, message, cancelEvent, sendEmpty, String.format("Contains a word with length (%d) \"%s\".", word.length(), word));
+                return;
+            } else if (hasInvalidSeparators(word)) {
+                cancelMessage(sender, message, cancelEvent, sendEmpty, String.format("Has a word with invalid separators (%s).", word));
                 return;
             }
 
@@ -84,7 +84,7 @@ public class ChatListener implements Listener {
         }
 
         if (wordsWithNumbers > plugin.getConfig().getInt("max-words-with-numbers")) {
-            cancelMessage(sender, message, cancelEvent, sendEmpty);
+            cancelMessage(sender, message, cancelEvent, sendEmpty, String.format("Used %d words with numbers.", wordsWithNumbers));
             return;
         }
 
@@ -136,10 +136,13 @@ public class ChatListener implements Listener {
                 foundDigits++;
             }
 
+            int similarity = -1;
             if (foundDigits >= noRepeatNumberAmount ||
                     (Duration.between(messageTime, now).getSeconds() < noRepeatTime
-                            && FuzzySearch.weightedRatio(messageText, cutMessage) > similarRatio)) {
-                cancelMessage(sender, message, cancelEvent, sendEmpty);
+                            && (similarity = FuzzySearch.weightedRatio(messageText, cutMessage)) > similarRatio)) {
+                String reason = similarity > -1 ?
+                        String.format("Similar to previous message (%d%%) (%s).", similarity, messageText) : "Contains too many numbers.";
+                cancelMessage(sender, message, cancelEvent, sendEmpty, reason);
                 return true;
             }
             i++;
@@ -172,7 +175,7 @@ public class ChatListener implements Listener {
         return false;
     }
 
-    private void cancelMessage(CommandSender sender, String message, Runnable cancelEvent, Consumer<String> sendEmpty) {
+    private void cancelMessage(CommandSender sender, String message, Runnable cancelEvent, Consumer<String> sendEmpty, String reason) {
         cancelEvent.run();
 
         if (plugin.getConfig().getBoolean("message-sender")) {
@@ -180,7 +183,7 @@ public class ChatListener implements Listener {
         }
 
         if (plugin.getConfig().getBoolean("verbose")) {
-            plugin.getLogger().info(ChatColor.RED + "[AntiSpam] <" + sender.getName() + "> " + message);
+            plugin.getLogger().info(ChatColor.RED + "[AntiSpam] <" + sender.getName() + "> " + message + " (" + reason + ")");
         }
     }
 }
