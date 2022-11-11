@@ -23,6 +23,7 @@ public class StringHelper {
         str = str.replace("#", "h");
         str = str.replace("!", "i");
         str = str.replace("]", "i");
+        str = str.replace("|", "i");
         str = str.replace("}", "i");
         str = str.replace("?", "o");
         str = str.replace("$", "s");

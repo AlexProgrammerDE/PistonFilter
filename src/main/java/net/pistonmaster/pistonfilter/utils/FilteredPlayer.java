@@ -12,5 +12,5 @@ import java.util.concurrent.ConcurrentHashMap;
 @Getter
 public class FilteredPlayer {
     private final UUID id;
-    private final Queue<Pair<Instant, String>> lastMessages;
+    private final Deque<MessageInfo> lastMessages;
 }
