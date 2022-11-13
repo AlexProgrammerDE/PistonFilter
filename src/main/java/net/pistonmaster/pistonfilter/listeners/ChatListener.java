@@ -1,5 +1,7 @@
 package net.pistonmaster.pistonfilter.listeners;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import me.xdrop.fuzzywuzzy.FuzzySearch;
 import net.md_5.bungee.api.ChatColor;
 import net.pistonmaster.pistonchat.api.PistonChatEvent;
@@ -7,17 +9,24 @@ import net.pistonmaster.pistonchat.api.PistonWhisperEvent;
 import net.pistonmaster.pistonchat.utils.CommonTool;
 import net.pistonmaster.pistonchat.utils.UniqueSender;
 import net.pistonmaster.pistonfilter.PistonFilter;
-import net.pistonmaster.pistonfilter.utils.*;
+import net.pistonmaster.pistonfilter.hooks.PistonMuteHook;
+import net.pistonmaster.pistonfilter.utils.FilteredPlayer;
+import net.pistonmaster.pistonfilter.utils.MaxSizeDeque;
+import net.pistonmaster.pistonfilter.utils.MessageInfo;
+import net.pistonmaster.pistonfilter.utils.StringHelper;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.util.StringUtil;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -25,10 +34,14 @@ public class ChatListener implements Listener {
     private final PistonFilter plugin;
     private final Deque<MessageInfo> globalMessages;
     private final Map<UUID, FilteredPlayer> players = new ConcurrentHashMap<>();
+    private final Cache<UUID, AtomicInteger> violationsCache;
 
     public ChatListener(PistonFilter plugin) {
         this.plugin = plugin;
         this.globalMessages = new MaxSizeDeque<>(plugin.getConfig().getInt("global-message-stack-size"));
+        this.violationsCache = CacheBuilder.newBuilder()
+                .expireAfterWrite(plugin.getConfig().getInt("mute-violations-timeframe"), TimeUnit.SECONDS)
+                .build();
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -167,6 +180,25 @@ public class ChatListener implements Listener {
 
         if (plugin.getConfig().getBoolean("verbose")) {
             plugin.getLogger().info(ChatColor.RED + "[AntiSpam] <" + sender.getName() + "> " + message.getOriginalMessage() + " (" + reason + ")");
+        }
+
+        if (plugin.getConfig().getBoolean("mute-on-fail")
+                && plugin.getServer().getPluginManager().isPluginEnabled("PistonMute")
+                && sender instanceof Player) {
+            try {
+                UniqueSender uniqueSender = new UniqueSender(sender);
+                int violations = violationsCache.get(uniqueSender.getUniqueId(), AtomicInteger::new).incrementAndGet();
+                if (violations > plugin.getConfig().getInt("mute-violations")) {
+                    violationsCache.invalidate(uniqueSender.getUniqueId());
+                    int muteTime = plugin.getConfig().getInt("mute-time");
+                    PistonMuteHook.mute((Player) sender, Date.from(Instant.now().plus(muteTime, ChronoUnit.SECONDS)));
+                    if (plugin.getConfig().getBoolean("verbose")) {
+                        plugin.getLogger().info(ChatColor.RED + "[AntiSpam] Muted " + uniqueSender.getDisplayName() + " for " + muteTime + " seconds.");
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 }

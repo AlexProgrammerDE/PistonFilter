@@ -172,6 +172,12 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>com.github.AlexProgrammerDE</groupId>
+            <artifactId>PistonMute</artifactId>
+            <version>1.1.1</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>me.xdrop</groupId>
             <artifactId>fuzzywuzzy</artifactId>
             <version>1.4.0</version>
