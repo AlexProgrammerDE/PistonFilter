@@ -1,6 +1,7 @@
 package net.pistonmaster.pistonfilter.utils;
 
 import lombok.*;
+import net.md_5.bungee.api.ChatColor;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -22,14 +23,21 @@ public class MessageInfo {
         return new MessageInfo(
                 time,
                 message,
-                StringHelper.revertLeet(removeWhiteSpace(message.replace(" ", ""))),
+                StringHelper.revertLeet(removeWhiteSpace(removeColorCodes(message.replace(" ", "")))),
                 words,
-                Arrays.stream(words).map(MessageInfo::removeWhiteSpace).map(StringHelper::revertLeet).toArray(String[]::new),
+                Arrays.stream(words)
+                        .map(MessageInfo::removeColorCodes)
+                        .map(MessageInfo::removeWhiteSpace)
+                        .map(StringHelper::revertLeet).toArray(String[]::new),
                 message.matches(".*\\d.*")
         );
     }
 
     private static String removeWhiteSpace(String string) {
         return string.replaceAll("\\s+", "");
+    }
+
+    private static String removeColorCodes(String string) {
+        return ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', string));
     }
 }
