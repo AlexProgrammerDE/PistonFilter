@@ -28,7 +28,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 public class ChatListener implements Listener {
     private final PistonFilter plugin;
@@ -97,14 +96,10 @@ public class ChatListener implements Listener {
 
         if (plugin.getConfig().getBoolean("no-repeat")) {
             UUID uuid = new UniqueSender(sender).getUniqueId();
-            FilteredPlayer filteredPlayerCached = players.compute(uuid, (k, v) -> {
-                if (v == null) {
-                    return new FilteredPlayer(new UniqueSender(sender).getUniqueId(), new MaxSizeDeque<>(
-                            plugin.getConfig().getInt("no-repeat-stack-size")));
-                } else {
-                    return v;
-                }
-            });
+            FilteredPlayer filteredPlayerCached = players.compute(uuid, (k, v) ->
+                    Objects.requireNonNullElseGet(v, () -> new FilteredPlayer(new UniqueSender(sender).getUniqueId(),
+                            new MaxSizeDeque<>(plugin.getConfig().getInt("no-repeat-stack-size")))));
+
             int noRepeatTime = plugin.getConfig().getInt("no-repeat-time");
             int similarRatio = plugin.getConfig().getInt("no-repeat-similar-ratio");
             Deque<MessageInfo> lastMessages = filteredPlayerCached.getLastMessages();
@@ -146,11 +141,11 @@ public class ChatListener implements Listener {
                 int similarity;
                 if ((similarity = FuzzySearch.weightedRatio(pair.getStrippedMessage(), message.getStrippedMessage())) > similarRatio) {
                     cancelMessage(sender, message, cancelEvent, sendEmpty,
-                            String.format("Similar to previous message (%d%%) (%s).", similarity, message.getOriginalMessage()));
+                            String.format("Similar to previous message (%d%%) (%s)", similarity, pair.getOriginalMessage()));
                     return true;
                 } else if (noRepeatWordRatio > -1 && (similarity = getAverageEqualRatio(pair.getStrippedWords(), message.getStrippedWords())) > noRepeatWordRatio) {
                     cancelMessage(sender, message, cancelEvent, sendEmpty,
-                            String.format("Word similarity to previous message (%d%%) (%s).", similarity, message.getOriginalMessage()));
+                            String.format("Word similarity to previous message (%d%%) (%s)", similarity, pair.getOriginalMessage()));
                     return true;
                 }
                 return true;
@@ -161,8 +156,7 @@ public class ChatListener implements Listener {
     }
 
     private boolean hasInvalidSeparators(String word) {
-        //noinspection Since15
-        List<Character> chars = word.chars().mapToObj(c -> (char) c).collect(Collectors.toList());
+        List<Character> chars = word.chars().mapToObj(c -> (char) c).toList();
         int maxSeparators = plugin.getConfig().getInt("max-separated-numbers");
         int separators = 0;
         int index = 0;
@@ -216,9 +210,10 @@ public class ChatListener implements Listener {
             for (String comparedWord : comparedTo) {
                 if (comparedWord.equalsIgnoreCase(sentWord)) {
                     total += 1;
+                    break;
                 }
             }
         }
-        return (int) Math.floor(total / sentWords.length * 100);
+        return (int) (total / sentWords.length) * 100;
     }
 }

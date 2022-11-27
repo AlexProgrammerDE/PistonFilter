@@ -17,14 +17,19 @@ public class MessageInfo {
     private final boolean containsDigit;
 
     public static MessageInfo of(Instant time, String message) {
-        String[] words = Arrays.stream(message.split(" ")).filter(word -> !word.isEmpty()).toArray(String[]::new);
+        String[] words = Arrays.stream(message.split("\\s+")).filter(word -> !word.isBlank()).toArray(String[]::new);
+
         return new MessageInfo(
                 time,
                 message,
-                StringHelper.revertLeet(message.toLowerCase().replace(" ", "").replaceAll("\\s+", "")),
+                StringHelper.revertLeet(removeWhiteSpace(message.replace(" ", ""))),
                 words,
-                Arrays.stream(words).map(StringHelper::revertLeet).toArray(String[]::new),
+                Arrays.stream(words).map(MessageInfo::removeWhiteSpace).map(StringHelper::revertLeet).toArray(String[]::new),
                 message.matches(".*\\d.*")
         );
+    }
+
+    private static String removeWhiteSpace(String string) {
+        return string.replaceAll("\\s+", "");
     }
 }
