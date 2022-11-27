@@ -129,6 +129,7 @@ public class ChatListener implements Listener {
                               boolean global) {
         int noRepeatNumberMessages = plugin.getConfig().getInt("no-repeat-number-messages");
         int noRepeatNumberAmount = plugin.getConfig().getInt("no-repeat-number-amount");
+        int noRepeatWordRatio = plugin.getConfig().getInt("no-repeat-word-ratio");
         int i = 0;
         int foundDigits = 0;
         for (Iterator<MessageInfo> it = lastMessages.descendingIterator(); it.hasNext(); ) {
@@ -138,13 +139,20 @@ public class ChatListener implements Listener {
                 foundDigits++;
             }
 
-            int similarity = -1;
-            if (foundDigits >= noRepeatNumberAmount ||
-                    (Duration.between(pair.getTime(), message.getTime()).getSeconds() < noRepeatTime
-                            && (similarity = FuzzySearch.weightedRatio(pair.getStrippedMessage(), message.getStrippedMessage())) > similarRatio)) {
-                String reason = similarity > -1 ?
-                        String.format("Similar to previous message (%d%%) (%s).", similarity, message.getOriginalMessage()) : "Contains too many numbers.";
-                cancelMessage(sender, message, cancelEvent, sendEmpty, reason);
+            if (foundDigits >= noRepeatNumberAmount) {
+                cancelMessage(sender, message, cancelEvent, sendEmpty, "Contains too many numbers.");
+                return true;
+            } else if (Duration.between(pair.getTime(), message.getTime()).getSeconds() < noRepeatTime) {
+                int similarity;
+                if ((similarity = FuzzySearch.weightedRatio(pair.getStrippedMessage(), message.getStrippedMessage())) > similarRatio) {
+                    cancelMessage(sender, message, cancelEvent, sendEmpty,
+                            String.format("Similar to previous message (%d%%) (%s).", similarity, message.getOriginalMessage()));
+                    return true;
+                } else if (noRepeatWordRatio > -1 && (similarity = getAverageEqualRatio(pair.getWords(), message.getWords())) > noRepeatWordRatio) {
+                    cancelMessage(sender, message, cancelEvent, sendEmpty,
+                            String.format("Word similarity to previous message (%d%%) (%s).", similarity, message.getOriginalMessage()));
+                    return true;
+                }
                 return true;
             }
             i++;
@@ -200,5 +208,17 @@ public class ChatListener implements Listener {
                 e.printStackTrace();
             }
         }
+    }
+
+    private int getAverageEqualRatio(String[] comparedTo, String[] sentWords) {
+        double total = 0;
+        for (String sentWord : sentWords) {
+            for (String comparedWord : comparedTo) {
+                if (comparedWord.equalsIgnoreCase(sentWord)) {
+                    total += 1;
+                }
+            }
+        }
+        return (int) Math.floor(total / sentWords.length * 100);
     }
 }
