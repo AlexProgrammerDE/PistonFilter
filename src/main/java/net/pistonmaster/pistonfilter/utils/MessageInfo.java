@@ -18,16 +18,15 @@ public class MessageInfo {
     private final boolean containsDigit;
 
     public static MessageInfo of(Instant time, String message) {
-        String[] words = Arrays.stream(message.split("\\s+")).filter(word -> !word.isBlank()).toArray(String[]::new);
+        String[] words = Arrays.stream(message.split("\\s+")).toArray(String[]::new);
 
         return new MessageInfo(
                 time,
                 message,
-                StringHelper.revertLeet(removeWhiteSpace(removeColorCodes(message.replace(" ", "")))),
+                StringHelper.revertLeet(removeWhiteSpace(removeColorCodes(message))),
                 words,
                 Arrays.stream(words)
                         .map(MessageInfo::removeColorCodes)
-                        .map(MessageInfo::removeWhiteSpace)
                         .map(StringHelper::revertLeet).toArray(String[]::new),
                 message.matches(".*\\d.*")
         );

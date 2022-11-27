@@ -102,7 +102,7 @@ public class ChatListener implements Listener {
 
             int noRepeatTime = plugin.getConfig().getInt("no-repeat-time");
             int similarRatio = plugin.getConfig().getInt("no-repeat-similar-ratio");
-            Deque<MessageInfo> lastMessages = filteredPlayerCached.getLastMessages();
+            Deque<MessageInfo> lastMessages = filteredPlayerCached.lastMessages();
 
             boolean blocked = isBlocked(sender, message, cancelEvent, sendEmpty, noRepeatTime, similarRatio, lastMessages, false);
 
@@ -111,7 +111,7 @@ public class ChatListener implements Listener {
             }
 
             if (!blocked) {
-                filteredPlayerCached.getLastMessages().add(message);
+                filteredPlayerCached.lastMessages().add(message);
                 globalMessages.add(message);
             }
         }
