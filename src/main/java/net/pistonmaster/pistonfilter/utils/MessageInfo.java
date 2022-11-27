@@ -5,6 +5,7 @@ import net.md_5.bungee.api.ChatColor;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.stream.Collectors;
 
 @Getter
 @ToString
@@ -19,21 +20,18 @@ public class MessageInfo {
 
     public static MessageInfo of(Instant time, String message) {
         String[] words = Arrays.stream(message.split("\\s+")).toArray(String[]::new);
+        String[] strippedWords = Arrays.stream(words)
+                .map(MessageInfo::removeColorCodes)
+                .map(StringHelper::revertLeet).toArray(String[]::new);
 
         return new MessageInfo(
                 time,
                 message,
-                StringHelper.revertLeet(removeWhiteSpace(removeColorCodes(message))),
+                String.join("", strippedWords),
                 words,
-                Arrays.stream(words)
-                        .map(MessageInfo::removeColorCodes)
-                        .map(StringHelper::revertLeet).toArray(String[]::new),
+                strippedWords,
                 message.matches(".*\\d.*")
         );
-    }
-
-    private static String removeWhiteSpace(String string) {
-        return string.replaceAll("\\s+", "");
     }
 
     private static String removeColorCodes(String string) {
