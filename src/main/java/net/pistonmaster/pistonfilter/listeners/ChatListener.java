@@ -142,13 +142,13 @@ public class ChatListener implements Listener {
             if (foundDigits >= noRepeatNumberAmount) {
                 cancelMessage(sender, message, cancelEvent, sendEmpty, "Contains too many numbers.");
                 return true;
-            } else if (Duration.between(pair.getTime(), message.getTime()).getSeconds() < noRepeatTime) {
+            } else if (noRepeatTime == - 1 || Duration.between(pair.getTime(), message.getTime()).getSeconds() < noRepeatTime) {
                 int similarity;
                 if ((similarity = FuzzySearch.weightedRatio(pair.getStrippedMessage(), message.getStrippedMessage())) > similarRatio) {
                     cancelMessage(sender, message, cancelEvent, sendEmpty,
                             String.format("Similar to previous message (%d%%) (%s).", similarity, message.getOriginalMessage()));
                     return true;
-                } else if (noRepeatWordRatio > -1 && (similarity = getAverageEqualRatio(pair.getWords(), message.getWords())) > noRepeatWordRatio) {
+                } else if (noRepeatWordRatio > -1 && (similarity = getAverageEqualRatio(pair.getStrippedWords(), message.getStrippedWords())) > noRepeatWordRatio) {
                     cancelMessage(sender, message, cancelEvent, sendEmpty,
                             String.format("Word similarity to previous message (%d%%) (%s).", similarity, message.getOriginalMessage()));
                     return true;

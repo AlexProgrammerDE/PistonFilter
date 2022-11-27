@@ -1,10 +1,10 @@
 verbose: true
 message-sender: true
 no-repeat: true
-# How many times after sending a message should the bot wait before sending the same message again
+# How many times after sending a message should the player wait before sending the same message again
 no-repeat-time: 60
-# How many messages are stored that are now allowed to be repeated?
-no-repeat-stack-size: 5
+# How many messages are stored that are not allowed to be repeated?
+no-repeat-stack-size: 20
 # How similar from 1-100 are two messages allowed to be before they are considered the same?
 no-repeat-similar-ratio: 90
 # Check words of previous messages for repeated word ratio. -1 to disable. Value means how many percent of the messages has repeated words.
@@ -28,7 +28,7 @@ mute-time: 60
 max-words-with-numbers: 5
 max-separated-numbers: 3
 max-word-length: 20
-banned-text-partial-ratio: 40
+banned-text-partial-ratio: 95
 banned-text:
   - "http"
   - "https"
