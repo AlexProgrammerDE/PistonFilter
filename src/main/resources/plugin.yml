@@ -4,6 +4,7 @@ main: net.pistonmaster.pistonfilter.PistonFilter
 description: Chat filter addon for PistonChat.
 depend: [ "PistonChat" ]
 softdepend: [ "PistonMute" ]
+api-version: 1.13
 commands:
   pistonfilter:
     description: Main command for PistonFilter
