@@ -137,7 +137,7 @@ public class ChatListener implements Listener {
             if (foundDigits >= noRepeatNumberAmount) {
                 cancelMessage(sender, message, cancelEvent, sendEmpty, "Contains too many numbers.");
                 return true;
-            } else if (noRepeatTime == - 1 || Duration.between(pair.getTime(), message.getTime()).getSeconds() < noRepeatTime) {
+            } else if (noRepeatTime == -1 || Duration.between(pair.getTime(), message.getTime()).getSeconds() < noRepeatTime) {
                 int similarity;
                 if ((similarity = FuzzySearch.weightedRatio(pair.getStrippedMessage(), message.getStrippedMessage())) > similarRatio) {
                     cancelMessage(sender, message, cancelEvent, sendEmpty,
@@ -214,6 +214,6 @@ public class ChatListener implements Listener {
                 }
             }
         }
-        return (int) (total / sentWords.length) * 100;
+        return (int) ((total / sentWords.length) * 100);
     }
 }
